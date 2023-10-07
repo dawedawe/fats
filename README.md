@@ -1,7 +1,8 @@
 fats
 ====
 
-fats is a cat-like dotnet tool to quickly dump multiple F# ranges from multiple files to the console.
+fats is a cat-like dotnet tool to quickly dump multiple F# ranges from multiple files to stdout.  
+Please note: F# ranges use 1-based lines and 0-based columns.
 
 Example:
 ```shell
