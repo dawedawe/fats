@@ -3,6 +3,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net7.0</TargetFramework>
+    <AssemblyName>fats</AssemblyName>
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>fats</ToolCommandName>
     <PackageOutputPath>./../../nupkg</PackageOutputPath>
