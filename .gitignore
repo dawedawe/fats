@@ -1,35 +1,4 @@
 #################
-## Eclipse
-#################
-
-*.pydevproject
-.project
-.metadata
-bin/
-tmp/
-*.tmp
-*.bak
-*.swp
-*~.nib
-local.properties
-.classpath
-.settings/
-.loadpath
-
-# External tool builders
-.externalToolBuilders/
-
-# Locally stored "Eclipse launch configurations"
-*.launch
-
-# CDT-specific
-.cproject
-
-# PDT-specific
-.buildpath
-
-
-#################
 ## Visual Studio
 #################
 
@@ -62,9 +31,6 @@ local.properties
 *.vspscc
 .builds
 *.dotCover
-
-## TODO: If you have NuGet Package Restore enabled, uncomment this
-#packages/
 
 # Visual C++ cache files
 ipch/
@@ -130,29 +96,6 @@ Thumbs.db
 # Folder config file
 Desktop.ini
 
-
-#############
-## Python
-#############
-
-*.py[co]
-
-# Packages
-*.egg
-*.egg-info
-dist
-build
-eggs
-parts
-bin
-var
-sdist
-develop-eggs
-.installed.cfg
-
-# Installer logs
-pip-log.txt
-
 # Unit test / coverage reports
 .coverage
 .tox
@@ -176,28 +119,6 @@ TestResults.xml
 *.sln.iml
 
 # external projects directory for extensive regression tests
-external-project-tests/
 .vscode/
-BenchmarkDotNet.Artifacts/
-FormatChanged.ps1
-src/Fantomas.FCS/generated/
 
-# FsDocs
-docs/homepage.css
-docs/homepage.css.map
-docs/content/fsdocs-custom.css
-docs/content/navbar.css
-docs/content/sidebar.css
-docs/global-config.css
-output/
-**/.fsdocs/cache
-
-# F# Compiler files
-.deps/
-
-# Regression testing
-tests/.repositories/**
-!tests/.repositories/Directory.Build.props
-
-# Analyzer files
-.analyzerpackages
+nupkg/
