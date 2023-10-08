@@ -4,14 +4,32 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net7.0</TargetFramework>
     <AssemblyName>fats</AssemblyName>
+    <PackageId>fats</PackageId>
+    <PackageDescription>fats is a cat-like tool to dump F# ranges to stdout</PackageDescription>
+    <Authors>David Schaefer</Authors>
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>fats</ToolCommandName>
     <PackageOutputPath>./../../nupkg</PackageOutputPath>
-   <Authors>David Schaefer</Authors>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <ChangelogFile>./../../CHANGELOG.md</ChangelogFile>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <PackageTags>cat;cli;cli-app;tool;tools;fsharp</PackageTags>
+    <RepositoryUrl>https://github.com/dawedawe/fats.git</RepositoryUrl>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
   </PropertyGroup>
 
   <ItemGroup>
+    <None Include="./../../README.md" Pack="true" PackagePath=""/>
+  </ItemGroup>
+
+  <ItemGroup>
     <Compile Include="Program.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Ionide.KeepAChangelog.Tasks" Version="0.1.8" />
   </ItemGroup>
 
 </Project>
