@@ -8,6 +8,10 @@ module Model =
         member this.Value =
             match this with
             | Line p -> p
+        
+        member this.Value0 =
+            match this with
+            | Line p -> p - 1
 
     type Column =
         | Column of int
@@ -19,8 +23,11 @@ module Model =
     type Pos =
         { Line: Line
           Column: Column }
+        
+        override this.ToString() = $"{this.Line.Value},{this.Column.Value}"
 
         static member Zero = { Line = Line 0; Column = Column 0 }
+        
         static member Create line column = { Line = line; Column = column }
 
     type Path =
@@ -35,6 +42,14 @@ module Model =
           Start: Pos
           End: Pos }
 
+        override this.ToString() = $"{this.File.Value}:({this.Start.ToString()}-{this.End.ToString()})"
+
+        member this.IsValid =
+            if this.Start.Line = this.End.Line then
+                this.Start.Column.Value <= this.End.Column.Value
+            else
+                this.Start.Line < this.End.Line
+
         static member Create path start ``end`` =
             { File = Path path
               Start = start
@@ -44,6 +59,13 @@ module Model =
         { File: Path
           Start: Line
           End: Line }
+
+        override this.ToString() = $"{this.File.Value}:({this.Start.Value}-{this.End.Value})"
+
+        member this.IsValid =
+            this.Start.Value <= this.End.Value
+            && this.Start.Value > 0
+            && this.End.Value > 0
 
         static member Create path start ``end`` =
             { File = Path path
@@ -102,14 +124,14 @@ module Core =
     open Model
 
     let rangeOfPositionsContent (range: RangeOfPositions) (lines: string array) =
-        if range.End.Line.Value <= lines.Length then
-            let linesInRange = lines[range.Start.Line.Value - 1 .. range.End.Line.Value - 1]
+        if range.End.Line.Value <= lines.Length && range.IsValid then
+            let linesInRange = lines[range.Start.Line.Value0 .. range.End.Line.Value0]
 
             if
                 range.Start.Column.Value > (Array.head linesInRange).Length
                 || range.End.Column.Value > (Array.last linesInRange).Length
             then
-                sprintf "Invalid range for: %s" range.File.Value |> Array.singleton
+                $"Invalid range {range.ToString()}" |> Array.singleton
             else if range.Start.Line = range.End.Line then
                 [| linesInRange[0]
                        .Substring(range.Start.Column.Value, range.End.Column.Value - range.Start.Column.Value) |]
@@ -122,13 +144,13 @@ module Core =
 
                 linesInRange
         else
-            sprintf "Invalid range for: %s" range.File.Value |> Array.singleton
+            $"Invalid range {range.ToString()}" |> Array.singleton
 
     let rangeOfLinesContent (range: RangeOfLines) (lines: string array) =
-        if range.End.Value <= lines.Length then
-            lines[range.Start.Value - 1 .. range.End.Value - 1]
+        if range.End.Value <= lines.Length && range.IsValid then
+            lines[range.Start.Value0 .. range.End.Value0]
         else
-            sprintf "Invalid range for: %s" range.File.Value |> Array.singleton
+            $"Invalid range {range.ToString()}" |> Array.singleton
 
     let rangeContent (range: Range) (lines: string array) =
         match range with
