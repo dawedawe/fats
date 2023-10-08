@@ -8,8 +8,9 @@ open Fats.Model
 let ``Single windows-style arg with double minus in RangeOfPositions is parsed correctly`` () =
     let path = @".\src\Fats\Program.fs"
     let args = [| $"{path}:(1,0--2,0)" |]
-    let ranges = parse args
+    let ranges, invalidArgs = parse args
     Assert.Single(ranges) |> ignore
+    Assert.Empty(invalidArgs)
     Assert.Equal(path, ranges.[0].File.Value)
 
     match ranges[0] with
@@ -22,8 +23,9 @@ let ``Single windows-style arg with double minus in RangeOfPositions is parsed c
 let ``Single unix-style arg with single minus in RangeOfPositions is parsed correctly`` () =
     let path = @"./src/Fats/Program.fs"
     let args = [| $"{path}:(1,0-2,0)" |]
-    let ranges = parse args
+    let ranges, invalidArgs = parse args
     Assert.Single(ranges) |> ignore
+    Assert.Empty(invalidArgs)
     Assert.Equal(path, ranges.[0].File.Value)
 
     match ranges[0] with
@@ -37,8 +39,9 @@ let ``Single unix-style arg with single minus in RangeOfPositions is parsed corr
 let ``Single windows-style arg with double minus in RangeOfLines is parsed correctly`` () =
     let path = @".\src\Fats\Program.fs"
     let args = [| $"{path}:(1--2)" |]
-    let ranges = parse args
+    let ranges, invalidArgs = parse args
     Assert.Single(ranges) |> ignore
+    Assert.Empty(invalidArgs)
     Assert.Equal(path, ranges.[0].File.Value)
 
     match ranges[0] with
@@ -51,8 +54,9 @@ let ``Single windows-style arg with double minus in RangeOfLines is parsed corre
 let ``Single unix-style arg with single minus in RangeOfLines is parsed correctly`` () =
     let path = @"./src/Fats/Program.fs"
     let args = [| $"{path}:(1-2)" |]
-    let ranges = parse args
+    let ranges, invalidArgs = parse args
     Assert.Single(ranges) |> ignore
+    Assert.Empty(invalidArgs)
     Assert.Equal(path, ranges.[0].File.Value)
 
     match ranges[0] with
@@ -65,11 +69,13 @@ let ``Single unix-style arg with single minus in RangeOfLines is parsed correctl
 [<Fact>]
 let ``No range for arg without range`` () =
     let args = [| "foo" |]
-    let ranges = parse args
+    let ranges, invalidArgs = parse args
     Assert.Empty(ranges)
+    Assert.Single(invalidArgs)
 
 [<Fact>]
 let ``No range for arg without file`` () =
     let args = [| ":(1,0--2,0)" |]
-    let ranges = parse args
+    let ranges, invalidArgs = parse args
     Assert.Empty(ranges)
+    Assert.Single(invalidArgs)

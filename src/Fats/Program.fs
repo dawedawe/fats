@@ -8,7 +8,7 @@ module Model =
         member this.Value =
             match this with
             | Line p -> p
-        
+
         member this.Value0 =
             match this with
             | Line p -> p - 1
@@ -23,11 +23,12 @@ module Model =
     type Pos =
         { Line: Line
           Column: Column }
-        
-        override this.ToString() = $"{this.Line.Value},{this.Column.Value}"
+
+        override this.ToString() =
+            $"{this.Line.Value},{this.Column.Value}"
 
         static member Zero = { Line = Line 0; Column = Column 0 }
-        
+
         static member Create line column = { Line = line; Column = column }
 
     type Path =
@@ -42,7 +43,8 @@ module Model =
           Start: Pos
           End: Pos }
 
-        override this.ToString() = $"{this.File.Value}:({this.Start.ToString()}-{this.End.ToString()})"
+        override this.ToString() =
+            $"{this.File.Value}:({this.Start.ToString()}-{this.End.ToString()})"
 
         member this.IsValid =
             if this.Start.Line = this.End.Line then
@@ -60,12 +62,11 @@ module Model =
           Start: Line
           End: Line }
 
-        override this.ToString() = $"{this.File.Value}:({this.Start.Value}-{this.End.Value})"
+        override this.ToString() =
+            $"{this.File.Value}:({this.Start.Value}-{this.End.Value})"
 
         member this.IsValid =
-            this.Start.Value <= this.End.Value
-            && this.Start.Value > 0
-            && this.End.Value > 0
+            this.Start.Value <= this.End.Value && this.Start.Value > 0 && this.End.Value > 0
 
         static member Create path start ``end`` =
             { File = Path path
@@ -88,36 +89,42 @@ module ArgsParser =
 
     let parse (args: string array) =
 
-        let rangeOfPosRegex = Regex(@"(.+):(\((\d+),(\d+)-+(\d+),(\d+)\))")
-        let rangeOfLinesRegex = Regex(@"(.+):(\((\d+)-+(\d+)\))")
+        let ofPositionsRegex = Regex(@"(.+):(\((\d+),(\d+)-+(\d+),(\d+)\))")
+        let ofLinesRegex = Regex(@"(.+):(\((\d+)-+(\d+)\))")
+        let invalidArgs = ResizeArray<string>()
 
-        [| for arg in args do
-               let regMatch = rangeOfPosRegex.Match(arg)
+        let ranges =
+            [| for arg in args do
+                   let ofPositionsMatch = ofPositionsRegex.Match(arg)
+                   let ofLinesMatch = lazy ofLinesRegex.Match(arg)
 
-               if regMatch.Success then
-                   let file = regMatch.Groups.[1].Value
-                   let startLine = int regMatch.Groups.[3].Value
-                   let startCol = int regMatch.Groups.[4].Value
-                   let endLine = int regMatch.Groups.[5].Value
-                   let endCol = int regMatch.Groups.[6].Value
+                   if ofPositionsMatch.Success then
+                       let file = ofPositionsMatch.Groups.[1].Value
+                       let startLine = int ofPositionsMatch.Groups.[3].Value
+                       let startCol = int ofPositionsMatch.Groups.[4].Value
+                       let endLine = int ofPositionsMatch.Groups.[5].Value
+                       let endCol = int ofPositionsMatch.Groups.[6].Value
 
-                   yield
-                       OfPositions(
-                           (RangeOfPositions.Create
-                               file
-                               (Pos.Create (Line startLine) (Column startCol))
-                               (Pos.Create (Line endLine) (Column endCol)))
-                       )
-               else
-                   let regMatch = rangeOfLinesRegex.Match(arg)
+                       yield
+                           OfPositions(
+                               (RangeOfPositions.Create
+                                   file
+                                   (Pos.Create (Line startLine) (Column startCol))
+                                   (Pos.Create (Line endLine) (Column endCol)))
+                           )
+                   else if ofLinesMatch.Value.Success then
 
-                   if regMatch.Success then
+                       if ofLinesMatch.Value.Success then
 
-                       let file = regMatch.Groups.[1].Value
-                       let startLine = int regMatch.Groups.[3].Value
-                       let endLine = int regMatch.Groups.[4].Value
+                           let file = ofLinesMatch.Value.Groups.[1].Value
+                           let startLine = int ofLinesMatch.Value.Groups.[3].Value
+                           let endLine = int ofLinesMatch.Value.Groups.[4].Value
 
-                       yield OfLines(RangeOfLines.Create file (Line startLine) (Line endLine)) |]
+                           yield OfLines(RangeOfLines.Create file (Line startLine) (Line endLine))
+                   else
+                       invalidArgs.Add arg |]
+
+        ranges, invalidArgs.ToArray()
 
 module Core =
 
@@ -181,8 +188,14 @@ module Main =
             1
         else
             parse argv
-            |> Array.iter (fun p ->
-                let content = Core.fileContent p
-                IO.output content)
+            |> fun (ranges, invalidArgs) ->
+
+                Array.iter (fun a -> printfn $"invalid argument: \"{a}\"") invalidArgs
+
+                Array.iter
+                    (fun r ->
+                        let content = Core.fileContent r
+                        IO.output content)
+                    ranges
 
             0
