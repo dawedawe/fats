@@ -17,9 +17,9 @@ fats <path> [<path> ...]
 A single `path` argument consists of a file path followed by a colon and a range in parentheses.  
 Two types of ranges are currently supported:
 - `(startLine-endLine)` - a range of lines
-- `(startLine,startColumn-endLine-endColumn)` - a range of characters  
+- `(startLine,startColumn-endLine,endColumn)` - a range of characters  
 
-Between start and end line/column numbers there can be a single dash or two dashes.
+Between start and end line/column numbers there can be a single dash or multiple dashes.
 
 Examples:
 ```shell
