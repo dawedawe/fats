@@ -87,42 +87,50 @@ module ArgsParser =
     open System.Text.RegularExpressions
     open Model
 
+    let ofPositionsRegex = Regex(@"(.+):(\((\d+),(\d+)-+(\d+),(\d+)\))")
+    let ofLinesRegex = Regex(@"(.+):(\((\d+)-+(\d+)\))")
+
+    let (|IsOfPositions|_|) s =
+        let ofPositionsMatch = ofPositionsRegex.Match(s)
+
+        if ofPositionsMatch.Success then
+            let file = ofPositionsMatch.Groups.[1].Value
+            let startLine = int ofPositionsMatch.Groups.[3].Value
+            let startCol = int ofPositionsMatch.Groups.[4].Value
+            let endLine = int ofPositionsMatch.Groups.[5].Value
+            let endCol = int ofPositionsMatch.Groups.[6].Value
+
+            Some(
+                OfPositions(
+                    (RangeOfPositions.Create
+                        file
+                        (Pos.Create (Line startLine) (Column startCol))
+                        (Pos.Create (Line endLine) (Column endCol)))
+                )
+            )
+        else
+            None
+
+    let (|IsOfLines|_|) s =
+        let ofLinesMatch = ofLinesRegex.Match(s)
+
+        if ofLinesMatch.Success then
+            let file = ofLinesMatch.Groups.[1].Value
+            let startLine = int ofLinesMatch.Groups.[3].Value
+            let endLine = int ofLinesMatch.Groups.[4].Value
+
+            Some(OfLines(RangeOfLines.Create file (Line startLine) (Line endLine)))
+        else
+            None
+
     let parse (args: string array) =
+        let f (rangesAcc, invalidAcc) arg =
+            match arg with
+            | IsOfPositions r
+            | IsOfLines r -> Array.append rangesAcc [| r |], invalidAcc
+            | _ -> rangesAcc, Array.append invalidAcc [| arg |]
 
-        let ofPositionsRegex = Regex(@"(.+):(\((\d+),(\d+)-+(\d+),(\d+)\))")
-        let ofLinesRegex = Regex(@"(.+):(\((\d+)-+(\d+)\))")
-        let invalidArgs = ResizeArray<string>()
-
-        let ranges =
-            [| for arg in args do
-                   let ofPositionsMatch = ofPositionsRegex.Match(arg)
-                   let ofLinesMatch = lazy ofLinesRegex.Match(arg)
-
-                   if ofPositionsMatch.Success then
-                       let file = ofPositionsMatch.Groups.[1].Value
-                       let startLine = int ofPositionsMatch.Groups.[3].Value
-                       let startCol = int ofPositionsMatch.Groups.[4].Value
-                       let endLine = int ofPositionsMatch.Groups.[5].Value
-                       let endCol = int ofPositionsMatch.Groups.[6].Value
-
-                       yield
-                           OfPositions(
-                               (RangeOfPositions.Create
-                                   file
-                                   (Pos.Create (Line startLine) (Column startCol))
-                                   (Pos.Create (Line endLine) (Column endCol)))
-                           )
-                   else if ofLinesMatch.Value.Success then
-
-                       let file = ofLinesMatch.Value.Groups.[1].Value
-                       let startLine = int ofLinesMatch.Value.Groups.[3].Value
-                       let endLine = int ofLinesMatch.Value.Groups.[4].Value
-
-                       yield OfLines(RangeOfLines.Create file (Line startLine) (Line endLine))
-                   else
-                       invalidArgs.Add arg |]
-
-        ranges, invalidArgs.ToArray()
+        Array.fold f (Array.empty, Array.empty) args
 
 module Core =
 
