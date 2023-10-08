@@ -114,13 +114,11 @@ module ArgsParser =
                            )
                    else if ofLinesMatch.Value.Success then
 
-                       if ofLinesMatch.Value.Success then
+                       let file = ofLinesMatch.Value.Groups.[1].Value
+                       let startLine = int ofLinesMatch.Value.Groups.[3].Value
+                       let endLine = int ofLinesMatch.Value.Groups.[4].Value
 
-                           let file = ofLinesMatch.Value.Groups.[1].Value
-                           let startLine = int ofLinesMatch.Value.Groups.[3].Value
-                           let endLine = int ofLinesMatch.Value.Groups.[4].Value
-
-                           yield OfLines(RangeOfLines.Create file (Line startLine) (Line endLine))
+                       yield OfLines(RangeOfLines.Create file (Line startLine) (Line endLine))
                    else
                        invalidArgs.Add arg |]
 
