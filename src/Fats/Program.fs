@@ -94,11 +94,11 @@ module ArgsParser =
         let ofPositionsMatch = ofPositionsRegex.Match(s)
 
         if ofPositionsMatch.Success then
-            let file = ofPositionsMatch.Groups.[1].Value
-            let startLine = int ofPositionsMatch.Groups.[3].Value
-            let startCol = int ofPositionsMatch.Groups.[4].Value
-            let endLine = int ofPositionsMatch.Groups.[5].Value
-            let endCol = int ofPositionsMatch.Groups.[6].Value
+            let file = ofPositionsMatch.Groups[1].Value
+            let startLine = int ofPositionsMatch.Groups[3].Value
+            let startCol = int ofPositionsMatch.Groups[4].Value
+            let endLine = int ofPositionsMatch.Groups[5].Value
+            let endCol = int ofPositionsMatch.Groups[6].Value
 
             Some(
                 OfPositions(
@@ -115,9 +115,9 @@ module ArgsParser =
         let ofLinesMatch = ofLinesRegex.Match(s)
 
         if ofLinesMatch.Success then
-            let file = ofLinesMatch.Groups.[1].Value
-            let startLine = int ofLinesMatch.Groups.[3].Value
-            let endLine = int ofLinesMatch.Groups.[4].Value
+            let file = ofLinesMatch.Groups[1].Value
+            let startLine = int ofLinesMatch.Groups[3].Value
+            let endLine = int ofLinesMatch.Groups[4].Value
 
             Some(OfLines(RangeOfLines.Create file (Line startLine) (Line endLine)))
         else
