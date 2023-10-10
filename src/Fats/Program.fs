@@ -165,18 +165,17 @@ module Core =
         else
             $"Invalid range {range.ToString()}" |> Array.singleton
 
-    let rangeContent (range: Range) (lines: string array) =
+    let rangeContent (lines: string array) (range: Range) =
         match range with
         | OfPositions range -> rangeOfPositionsContent range lines
         | OfLines range -> rangeOfLinesContent range lines
 
-    let fileContent (range: Range) =
-        let path = range.File.Value
-
-        if System.IO.File.Exists path then
-            System.IO.File.ReadAllLines(path) |> rangeContent range
+    let fileContent (path: Path, ranges: Range array) =
+        if System.IO.File.Exists path.Value then
+            let lines = System.IO.File.ReadAllLines(path.Value)
+            ranges |> Array.map (rangeContent lines) |> Array.concat
         else
-            sprintf "File not found: %s" path |> Array.singleton
+            sprintf "File not found: %s" path.Value |> Array.singleton
 
 module IO =
 
@@ -195,13 +194,10 @@ module Main =
         else
             parse argv
             |> fun (ranges, invalidArgs) ->
+                invalidArgs |> Array.iter (fun a -> printfn $"invalid argument: \"{a}\"")
 
-                Array.iter (fun a -> printfn $"invalid argument: \"{a}\"") invalidArgs
-
-                Array.iter
-                    (fun r ->
-                        let content = Core.fileContent r
-                        IO.output content)
-                    ranges
+                ranges
+                |> Array.groupBy (fun r -> r.File)
+                |> Array.iter (Core.fileContent >> IO.output)
 
             0

@@ -13,7 +13,7 @@ let ``RangeOfPositions with length zero returns empty string from non-empty line
             RangeOfPositions.Create "test.txt" (Pos.Create (Line 1) (Column 0)) (Pos.Create (Line 1) (Column 0))
         )
 
-    let content = rangeContent range lines
+    let content = rangeContent lines range
     Assert.Equal("", Assert.Single(content))
 
 [<Fact>]
@@ -25,7 +25,7 @@ let ``RangeOfPositions with length zero returns empty string from empty line`` (
             RangeOfPositions.Create "test.txt" (Pos.Create (Line 1) (Column 0)) (Pos.Create (Line 1) (Column 0))
         )
 
-    let content = rangeContent range lines
+    let content = rangeContent lines range
     Assert.Equal("", Assert.Single(content))
 
 
@@ -38,7 +38,7 @@ let ``RangeOfPositions of first char returns correct string`` () =
             RangeOfPositions.Create "test.txt" (Pos.Create (Line 1) (Column 0)) (Pos.Create (Line 1) (Column 1))
         )
 
-    let content = rangeContent range lines
+    let content = rangeContent lines range
     Assert.Equal("0", Assert.Single(content))
 
 [<Fact>]
@@ -50,7 +50,7 @@ let ``RangeOfPositions of last char returns correct string`` () =
             RangeOfPositions.Create "test.txt" (Pos.Create (Line 1) (Column 3)) (Pos.Create (Line 1) (Column 4))
         )
 
-    let content = rangeContent range lines
+    let content = rangeContent lines range
     Assert.Equal("3", Assert.Single(content))
 
 [<Fact>]
@@ -62,7 +62,7 @@ let ``Multiline RangeOfPositions covering all lines returns correct strings`` ()
             RangeOfPositions.Create "test.txt" (Pos.Create (Line 1) (Column 0)) (Pos.Create (Line 2) (Column 4))
         )
 
-    let content = rangeContent range lines
+    let content = rangeContent lines range
     Assert.Equal(2, content.Length)
     Assert.Equal(lines[0], content[0])
     Assert.Equal(lines[1], content[1])
@@ -76,7 +76,7 @@ let ``Multiline RangeOfPositions covering part of lines returns correct strings`
             RangeOfPositions.Create "test.txt" (Pos.Create (Line 1) (Column 3)) (Pos.Create (Line 3) (Column 1))
         )
 
-    let content = rangeContent range lines
+    let content = rangeContent lines range
     Assert.Equal(3, content.Length)
     Assert.Equal("3", content[0])
     Assert.Equal(lines[1], content[1])
@@ -88,7 +88,7 @@ let ``RangeOfLine with length zero returns single line from non-empty line`` () 
 
     let range = OfLines(RangeOfLines.Create "test.txt" (Line 1) (Line 1))
 
-    let content = rangeContent range lines
+    let content = rangeContent lines range
     Assert.Equal(lines[0], Assert.Single(content))
 
 [<Fact>]
@@ -97,7 +97,7 @@ let ``Multiline RangeOfLine returns correct strings`` () =
 
     let range = OfLines(RangeOfLines.Create "test.txt" (Line 1) (Line 3))
 
-    let content = rangeContent range lines
+    let content = rangeContent lines range
     Assert.Equal(3, content.Length)
     Assert.Equal(lines[0], content[0])
     Assert.Equal(lines[1], content[1])
