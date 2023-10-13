@@ -13,12 +13,16 @@ module Model =
             match this with
             | Line p -> p - 1
 
+        member this.IsValid = this.Value >= 1
+
     type Column =
         | Column of int
 
         member this.Value =
             match this with
             | Column p -> p
+
+        member this.IsValid = this.Value >= 0
 
     type Pos =
         { Line: Line
@@ -27,9 +31,9 @@ module Model =
         override this.ToString() =
             $"{this.Line.Value},{this.Column.Value}"
 
-        static member Zero = { Line = Line 0; Column = Column 0 }
-
         static member Create line column = { Line = line; Column = column }
+
+        member this.IsValid = this.Line.IsValid && this.Column.IsValid
 
     type Path =
         | Path of string
@@ -47,10 +51,12 @@ module Model =
             $"{this.File.Value}:({this.Start.ToString()}-{this.End.ToString()})"
 
         member this.IsValid =
-            if this.Start.Line = this.End.Line then
-                this.Start.Column.Value <= this.End.Column.Value
-            else
-                this.Start.Line < this.End.Line
+            this.Start.IsValid
+            && this.End.IsValid
+            && if this.Start.Line = this.End.Line then
+                   this.Start.Column.Value <= this.End.Column.Value
+               else
+                   this.Start.Line < this.End.Line
 
         static member Create path start ``end`` =
             { File = Path path
@@ -81,6 +87,11 @@ module Model =
             match this with
             | OfPositions r -> r.File
             | OfLines r -> r.File
+
+        member this.IsValid =
+            match this with
+            | OfPositions r -> r.IsValid
+            | OfLines r -> r.IsValid
 
 module ArgsParser =
 
