@@ -6,7 +6,7 @@
 
 * Support for RangeOfPosition
 
-### Changed
+### Fixed
 
 * Make colon between path and OPAREN optional
 
