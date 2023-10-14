@@ -1,81 +1,45 @@
-module ArgsParserTests
+module Fats.ArgsParserTests
 
 open Xunit
 open Fats.ArgsParser
 open Fats.Model
+open Fats.TestHelpers
 
-[<Fact>]
-let ``Single windows-style arg with double minus in RangeOfPositions is parsed correctly`` () =
-    let path = @".\src\Fats\Program.fs"
-    let args = [| $"{path}:(1,0--2,0)" |]
-    let ranges, invalidArgs = parse args
-    Assert.Single(ranges) |> ignore
+let validArgsAndExpectedRanges =
+    SeqTheoryTupleData<string, Range>(
+
+        [ @".\a\b\c.fs:(1,0--2,0)",
+          OfPositions(
+              RangeOfPositions.Create @".\a\b\c.fs" (Pos.Create (Line 1) (Column 0)) (Pos.Create (Line 2) (Column 0))
+          )
+          @".\a\b\c.fs(1,0--2,0)",
+          OfPositions(
+              RangeOfPositions.Create @".\a\b\c.fs" (Pos.Create (Line 1) (Column 0)) (Pos.Create (Line 2) (Column 0))
+          )
+          @"./a/b/c.fs:(1,0-2,0)",
+          OfPositions(
+              RangeOfPositions.Create @"./a/b/c.fs" (Pos.Create (Line 1) (Column 0)) (Pos.Create (Line 2) (Column 0))
+          )
+          @".\a\b\c.fs:(1--2)", OfLines(RangeOfLines.Create @".\a\b\c.fs" (Line 1) (Line 2))
+          @"./a/b/c.fs:(1-2)", OfLines(RangeOfLines.Create @"./a/b/c.fs" (Line 1) (Line 2))
+          @"./a/b/c.fs(1-2)", OfLines(RangeOfLines.Create @"./a/b/c.fs" (Line 1) (Line 2))
+          @"./a/b/c.fs(1,0)", OfPosition(RangeOfPosition.Create @"./a/b/c.fs" (Pos.Create (Line 1) (Column 0)))
+          @"./a/b/c.fsi:(1,0)", OfPosition(RangeOfPosition.Create @"./a/b/c.fsi" (Pos.Create (Line 1) (Column 0))) ]
+    )
+
+[<Theory>]
+[<MemberData(nameof (validArgsAndExpectedRanges))>]
+let ``Valid args produce valid ranges`` (arg: string, expectedRange: Range) =
+    let ranges, invalidArgs = parse [| arg |]
     Assert.Empty(invalidArgs)
-    Assert.Equal(path, ranges.[0].File.Value)
+    Assert.Equal(expectedRange, Assert.Single(ranges))
 
-    match ranges[0] with
-    | OfPositions r ->
-        Assert.Equal((Pos.Create (Line 1) (Column 0)), r.Start)
-        Assert.Equal((Pos.Create (Line 2) (Column 0)), r.End)
-    | _ -> Assert.True(false)
+let invalidArgs =
+    SeqTheoryData<string>([ "foo"; "foo:"; ":(1,0--2,0)"; "(1,0--2,0)" ])
 
-[<Fact>]
-let ``Single unix-style arg with single minus in RangeOfPositions is parsed correctly`` () =
-    let path = @"./src/Fats/Program.fs"
-    let args = [| $"{path}:(1,0-2,0)" |]
-    let ranges, invalidArgs = parse args
-    Assert.Single(ranges) |> ignore
-    Assert.Empty(invalidArgs)
-    Assert.Equal(path, ranges.[0].File.Value)
-
-    match ranges[0] with
-    | OfPositions r ->
-        Assert.Equal((Pos.Create (Line 1) (Column 0)), r.Start)
-        Assert.Equal((Pos.Create (Line 2) (Column 0)), r.End)
-    | _ -> Assert.True(false)
-
-
-[<Fact>]
-let ``Single windows-style arg with double minus in RangeOfLines is parsed correctly`` () =
-    let path = @".\src\Fats\Program.fs"
-    let args = [| $"{path}:(1--2)" |]
-    let ranges, invalidArgs = parse args
-    Assert.Single(ranges) |> ignore
-    Assert.Empty(invalidArgs)
-    Assert.Equal(path, ranges.[0].File.Value)
-
-    match ranges[0] with
-    | OfLines r ->
-        Assert.Equal(Line 1, r.Start)
-        Assert.Equal(Line 2, r.End)
-    | _ -> Assert.True(false)
-
-[<Fact>]
-let ``Single unix-style arg with single minus in RangeOfLines is parsed correctly`` () =
-    let path = @"./src/Fats/Program.fs"
-    let args = [| $"{path}:(1-2)" |]
-    let ranges, invalidArgs = parse args
-    Assert.Single(ranges) |> ignore
-    Assert.Empty(invalidArgs)
-    Assert.Equal(path, ranges.[0].File.Value)
-
-    match ranges[0] with
-    | OfLines r ->
-        Assert.Equal(Line 1, r.Start)
-        Assert.Equal(Line 2, r.End)
-    | _ -> Assert.True(false)
-
-
-[<Fact>]
-let ``No range for arg without range`` () =
-    let args = [| "foo" |]
-    let ranges, invalidArgs = parse args
-    Assert.Empty(ranges)
-    Assert.Single(invalidArgs)
-
-[<Fact>]
-let ``No range for arg without file`` () =
-    let args = [| ":(1,0--2,0)" |]
-    let ranges, invalidArgs = parse args
+[<Theory>]
+[<MemberData(nameof (invalidArgs))>]
+let ``Invalid args produce invalid ranges`` (arg: string) =
+    let ranges, invalidArgs = parse [| arg |]
     Assert.Empty(ranges)
     Assert.Single(invalidArgs)

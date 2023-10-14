@@ -6,6 +6,7 @@
     <IsTestProject>true</IsTestProject>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="TestHelpers.fs" />
     <Compile Include="ModelTests.fs" />
     <Compile Include="ArgsParserTests.fs" />
     <Compile Include="CoreTests.fs" />

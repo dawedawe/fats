@@ -1,15 +1,8 @@
-module ModelTests
+module Fats.ModelTests
 
-open System.Collections.Generic
 open Xunit
 open Fats.Model
-
-type SeqTheoryData<'t>(data: IEnumerable<'t>) =
-    inherit TheoryData<'t>()
-
-    do
-        for d in data do
-            base.Add(d)
+open Fats.TestHelpers
 
 let validRanges =
     SeqTheoryData<Range>(
@@ -19,6 +12,7 @@ let validRanges =
           OfPositions(
               RangeOfPositions.Create "file.txt" (Pos.Create (Line 1) (Column 0)) (Pos.Create (Line 2) (Column 0))
           )
+          OfPosition(RangeOfPosition.Create "file.txt" (Pos.Create (Line 1) (Column 0)))
           OfLines(RangeOfLines.Create "file.txt" (Line 1) (Line 1))
           OfLines(RangeOfLines.Create "file.txt" (Line 1) (Line 2)) ]
     )
@@ -41,6 +35,8 @@ let invalidRanges =
           OfPositions(
               RangeOfPositions.Create "file.txt" (Pos.Create (Line 1) (Column 0)) (Pos.Create (Line 0) (Column 0))
           )
+          OfPosition(RangeOfPosition.Create "file.txt" (Pos.Create (Line 0) (Column 0)))
+          OfPosition(RangeOfPosition.Create "file.txt" (Pos.Create (Line 1) (Column -1)))
           OfLines(RangeOfLines.Create "file.txt" (Line 1) (Line 0))
           OfLines(RangeOfLines.Create "file.txt" (Line 0) (Line 1))
           OfLines(RangeOfLines.Create "file.txt" (Line 2) (Line 1)) ]

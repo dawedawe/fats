@@ -63,6 +63,17 @@ module Model =
               Start = start
               End = ``end`` }
 
+    type RangeOfPosition =
+        { File: Path
+          Position: Pos }
+
+        override this.ToString() =
+            $"{this.File.Value}({this.Position.ToString()})"
+
+        member this.IsValid = this.Position.IsValid
+
+        static member Create path pos = { File = Path path; Position = pos }
+
     type RangeOfLines =
         { File: Path
           Start: Line
@@ -81,16 +92,19 @@ module Model =
 
     type Range =
         | OfPositions of RangeOfPositions
+        | OfPosition of RangeOfPosition
         | OfLines of RangeOfLines
 
         member this.File =
             match this with
             | OfPositions r -> r.File
+            | OfPosition r -> r.File
             | OfLines r -> r.File
 
         member this.IsValid =
             match this with
             | OfPositions r -> r.IsValid
+            | OfPosition r -> r.IsValid
             | OfLines r -> r.IsValid
 
 module ArgsParser =
@@ -98,18 +112,22 @@ module ArgsParser =
     open System.Text.RegularExpressions
     open Model
 
-    let ofPositionsRegex = Regex(@"(.+):(\((\d+),(\d+)-+(\d+),(\d+)\))")
-    let ofLinesRegex = Regex(@"(.+):(\((\d+)-+(\d+)\))")
+    let ofPositionsRegex =
+        Regex(@"(?<file>.+[^:])(:?)(\((?<sline>\d+),(?<scol>\d+)-+(?<eline>\d+),(?<ecol>\d+)\))")
+
+    let ofPositionRegex = Regex(@"(?<file>.+[^:])(:?)(\((?<line>\d+),(?<col>\d+)\))")
+
+    let ofLinesRegex = Regex(@"(?<file>.+[^:])(:?)(\((?<sline>\d+)-+(?<eline>\d+)\))")
 
     let (|IsOfPositions|_|) s =
         let ofPositionsMatch = ofPositionsRegex.Match(s)
 
         if ofPositionsMatch.Success then
-            let file = ofPositionsMatch.Groups[1].Value
-            let startLine = int ofPositionsMatch.Groups[3].Value
-            let startCol = int ofPositionsMatch.Groups[4].Value
-            let endLine = int ofPositionsMatch.Groups[5].Value
-            let endCol = int ofPositionsMatch.Groups[6].Value
+            let file = ofPositionsMatch.Groups["file"].Value
+            let startLine = int ofPositionsMatch.Groups["sline"].Value
+            let startCol = int ofPositionsMatch.Groups["scol"].Value
+            let endLine = int ofPositionsMatch.Groups["eline"].Value
+            let endCol = int ofPositionsMatch.Groups["ecol"].Value
 
             Some(
                 OfPositions(
@@ -122,13 +140,25 @@ module ArgsParser =
         else
             None
 
+    let (|IsOfPosition|_|) s =
+        let ofPositionMatch = ofPositionRegex.Match(s)
+
+        if ofPositionMatch.Success then
+            let file = ofPositionMatch.Groups["file"].Value
+            let line = int ofPositionMatch.Groups["line"].Value
+            let col = int ofPositionMatch.Groups["col"].Value
+
+            Some(OfPosition((RangeOfPosition.Create file (Pos.Create (Line line) (Column col)))))
+        else
+            None
+
     let (|IsOfLines|_|) s =
         let ofLinesMatch = ofLinesRegex.Match(s)
 
         if ofLinesMatch.Success then
-            let file = ofLinesMatch.Groups[1].Value
-            let startLine = int ofLinesMatch.Groups[3].Value
-            let endLine = int ofLinesMatch.Groups[4].Value
+            let file = ofLinesMatch.Groups["file"].Value
+            let startLine = int ofLinesMatch.Groups["sline"].Value
+            let endLine = int ofLinesMatch.Groups["eline"].Value
 
             Some(OfLines(RangeOfLines.Create file (Line startLine) (Line endLine)))
         else
@@ -138,6 +168,7 @@ module ArgsParser =
         let f (rangesAcc, invalidAcc) arg =
             match arg with
             | IsOfPositions r
+            | IsOfPosition r
             | IsOfLines r -> Array.append rangesAcc [| r |], invalidAcc
             | _ -> rangesAcc, Array.append invalidAcc [| arg |]
 
@@ -170,6 +201,21 @@ module Core =
         else
             $"Invalid range {range.ToString()}" |> Array.singleton
 
+    /// <summary>give back the whole line of the position</summary>
+    /// <param name="range"></param>
+    /// <param name="lines"></param>
+    /// <returns></returns>
+    let rangeOfPositionContent (range: RangeOfPosition) (lines: string array) =
+        if range.Position.Line.Value <= lines.Length && range.IsValid then
+            let lineInRange = lines[range.Position.Line.Value0]
+
+            if range.Position.Column.Value > lineInRange.Length then
+                $"Invalid range {range.ToString()}" |> Array.singleton
+            else
+                lineInRange |> Array.singleton
+        else
+            $"Invalid range {range.ToString()}" |> Array.singleton
+
     let rangeOfLinesContent (range: RangeOfLines) (lines: string array) =
         if range.End.Value <= lines.Length && range.IsValid then
             lines[range.Start.Value0 .. range.End.Value0]
@@ -179,6 +225,7 @@ module Core =
     let rangeContent (lines: string array) (range: Range) =
         match range with
         | OfPositions range -> rangeOfPositionsContent range lines
+        | OfPosition range -> rangeOfPositionContent range lines
         | OfLines range -> rangeOfLinesContent range lines
 
     let fileContent (path: Path, ranges: Range array) =

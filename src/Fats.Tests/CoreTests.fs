@@ -1,4 +1,4 @@
-module CoreTests
+module Fats.CoreTests
 
 open Xunit
 open Fats.Core
@@ -52,6 +52,16 @@ let ``RangeOfPositions of last char returns correct string`` () =
 
     let content = rangeContent lines range
     Assert.Equal("3", Assert.Single(content))
+
+[<Fact>]
+let ``RangeOfPosition returns whole line`` () =
+    let lines = [| "0123"; "45"; "678" |]
+
+    let range =
+        OfPosition(RangeOfPosition.Create "test.txt" (Pos.Create (Line 2) (Column 1)))
+
+    let content = rangeContent lines range
+    Assert.Equal("45", Assert.Single(content))
 
 [<Fact>]
 let ``Multiline RangeOfPositions covering all lines returns correct strings`` () =
