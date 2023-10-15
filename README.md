@@ -32,11 +32,13 @@ module Model =
 ```
 
 ```shell
-> fats "./src/Fats/Program.fs:(1-1)"
+> fats "./src/Fats/Program.fs:(1-3)" # lines 1 to 3
 namespace Fats
+
+module Model =
 ```
 
 ```shell
-> fats "./src/Fats/Program.fs:(1,3)"
+> fats "./src/Fats/Program.fs:(1,3)" # line containing the position
 namespace Fats
 ```
