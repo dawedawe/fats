@@ -3,6 +3,7 @@ fats
 
 fats is a cat-like dotnet tool to quickly dump multiple F# ranges from multiple files to stdout.  
 Please note: F# ranges use 1-based lines and 0-based columns.
+Given a single path to a `.sarif` file, fats will dump the regions from the sarif results.
 
 # Installation
 ```shell
@@ -41,4 +42,12 @@ module Model =
 ```shell
 > fats "./src/Fats/Program.fs:(1,3)" # line containing the position
 namespace Fats
+```
+
+```shell
+> fats ./testbed.sarif
+GRA-STRING-002: The usage of String.StartsWith with a single string argument is discouraged. Signal your intention explicitly by calling an overload.
+C:/Users/schae/src/testbed/Library.fs(6,11)
+        if name.StartsWith("world") then
+---
 ```

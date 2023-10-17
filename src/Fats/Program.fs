@@ -48,7 +48,7 @@ module Model =
           End: Pos }
 
         override this.ToString() =
-            $"{this.File.Value}:({this.Start.ToString()}-{this.End.ToString()})"
+            $"{this.File.Value}({this.Start.ToString()}-{this.End.ToString()})"
 
         member this.IsValid =
             this.Start.IsValid
@@ -59,7 +59,7 @@ module Model =
                    this.Start.Line < this.End.Line
 
         static member Create path start ``end`` =
-            { File = Path path
+            { File = path
               Start = start
               End = ``end`` }
 
@@ -72,7 +72,7 @@ module Model =
 
         member this.IsValid = this.Position.IsValid
 
-        static member Create path pos = { File = Path path; Position = pos }
+        static member Create path pos = { File = path; Position = pos }
 
     type RangeOfLines =
         { File: Path
@@ -80,13 +80,13 @@ module Model =
           End: Line }
 
         override this.ToString() =
-            $"{this.File.Value}:({this.Start.Value}-{this.End.Value})"
+            $"{this.File.Value}({this.Start.Value}-{this.End.Value})"
 
         member this.IsValid =
             this.Start.Value <= this.End.Value && this.Start.Value > 0 && this.End.Value > 0
 
         static member Create path start ``end`` =
-            { File = Path path
+            { File = path
               Start = start
               End = ``end`` }
 
@@ -106,6 +106,12 @@ module Model =
             | OfPositions r -> r.IsValid
             | OfPosition r -> r.IsValid
             | OfLines r -> r.IsValid
+
+        override this.ToString() =
+            match this with
+            | OfPositions r -> r.ToString()
+            | OfPosition r -> r.ToString()
+            | OfLines r -> r.ToString()
 
 module ArgsParser =
 
@@ -132,7 +138,7 @@ module ArgsParser =
             Some(
                 OfPositions(
                     (RangeOfPositions.Create
-                        file
+                        (Path file)
                         (Pos.Create (Line startLine) (Column startCol))
                         (Pos.Create (Line endLine) (Column endCol)))
                 )
@@ -148,7 +154,7 @@ module ArgsParser =
             let line = int ofPositionMatch.Groups["line"].Value
             let col = int ofPositionMatch.Groups["col"].Value
 
-            Some(OfPosition((RangeOfPosition.Create file (Pos.Create (Line line) (Column col)))))
+            Some(OfPosition((RangeOfPosition.Create (Path file) (Pos.Create (Line line) (Column col)))))
         else
             None
 
@@ -160,7 +166,7 @@ module ArgsParser =
             let startLine = int ofLinesMatch.Groups["sline"].Value
             let endLine = int ofLinesMatch.Groups["eline"].Value
 
-            Some(OfLines(RangeOfLines.Create file (Line startLine) (Line endLine)))
+            Some(OfLines(RangeOfLines.Create (Path file) (Line startLine) (Line endLine)))
         else
             None
 
@@ -235,6 +241,50 @@ module Core =
         else
             sprintf "File not found: %s" path.Value |> Array.singleton
 
+module SarifReport =
+
+    open Microsoft.CodeAnalysis.Sarif
+    open Core
+    open Model
+
+    type SarifItem =
+        { RuleId: string
+          Message: string
+          Range: Range }
+
+    let fromPhysicalLocation (loc: PhysicalLocation) =
+        let file = Path loc.ArtifactLocation.Uri.AbsolutePath
+        let startLine = Line loc.Region.StartLine
+        let startColumn = Column loc.Region.StartColumn
+        OfPosition(RangeOfPosition.Create file (Pos.Create startLine startColumn))
+
+    let readLog path =
+        let text = System.IO.File.ReadAllText(path)
+        let sarifLog = Newtonsoft.Json.JsonConvert.DeserializeObject<SarifLog>(text)
+        sarifLog
+
+    let rangesFromLog (log: SarifLog) =
+        [| for run in log.Runs do
+               for result in run.Results do
+                   for loc in result.Locations do
+                       { Range = fromPhysicalLocation loc.PhysicalLocation
+                         RuleId = result.RuleId
+                         Message = result.Message.Text } |]
+
+
+    let fileContent (path: Path, sarifItems: SarifItem array) =
+        if System.IO.File.Exists path.Value then
+            let lines = System.IO.File.ReadAllLines(path.Value)
+
+            sarifItems
+            |> Array.map (fun item ->
+                let content = rangeContent lines item.Range
+                Array.append [| $"{item.RuleId}: {item.Message}\n{item.Range.ToString()}" |] content)
+            |> Array.map (fun c -> Array.append c [| "---" |])
+            |> Array.concat
+        else
+            sprintf "File not found: %s" path.Value |> Array.singleton
+
 module IO =
 
     let output lines =
@@ -242,6 +292,8 @@ module IO =
 
 module Main =
 
+    open System
+    open System.IO
     open ArgsParser
 
     [<EntryPoint>]
@@ -249,6 +301,18 @@ module Main =
         if Array.isEmpty argv then
             printfn "Usage: fats <path> [<path> ...]"
             1
+        else if argv.Length = 1 && argv[0].EndsWith(".sarif", StringComparison.Ordinal) then
+            if File.Exists argv[0] then
+                argv[0]
+                |> SarifReport.readLog
+                |> SarifReport.rangesFromLog
+                |> Array.groupBy (fun r -> r.Range.File)
+                |> Array.iter (SarifReport.fileContent >> IO.output)
+
+                0
+            else
+                printfn $"file does not exist %s{argv[0]}"
+                1
         else
             parse argv
             |> fun (ranges, invalidArgs) ->

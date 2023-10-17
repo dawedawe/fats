@@ -122,3 +122,5 @@ TestResults.xml
 .vscode/
 
 nupkg/
+
+*.sarif
