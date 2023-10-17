@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.0.4] - 2023-10-18
+
+### Added
+
+* Support for Sarif reports
+
 ## [0.0.3] - 2023-10-14
 
 ### Added

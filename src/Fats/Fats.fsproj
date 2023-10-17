@@ -30,6 +30,7 @@
 
   <ItemGroup>
     <PackageReference Include="Ionide.KeepAChangelog.Tasks" Version="0.1.8" />
+    <PackageReference Include="Sarif.Sdk" Version="4.3.4" />
   </ItemGroup>
 
 </Project>

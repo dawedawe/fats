@@ -10,7 +10,7 @@ let ``RangeOfPositions with length zero returns empty string from non-empty line
 
     let range =
         OfPositions(
-            RangeOfPositions.Create "test.txt" (Pos.Create (Line 1) (Column 0)) (Pos.Create (Line 1) (Column 0))
+            RangeOfPositions.Create (Path "test.txt") (Pos.Create (Line 1) (Column 0)) (Pos.Create (Line 1) (Column 0))
         )
 
     let content = rangeContent lines range
@@ -22,7 +22,7 @@ let ``RangeOfPositions with length zero returns empty string from empty line`` (
 
     let range =
         OfPositions(
-            RangeOfPositions.Create "test.txt" (Pos.Create (Line 1) (Column 0)) (Pos.Create (Line 1) (Column 0))
+            RangeOfPositions.Create (Path "test.txt") (Pos.Create (Line 1) (Column 0)) (Pos.Create (Line 1) (Column 0))
         )
 
     let content = rangeContent lines range
@@ -35,7 +35,7 @@ let ``RangeOfPositions of first char returns correct string`` () =
 
     let range =
         OfPositions(
-            RangeOfPositions.Create "test.txt" (Pos.Create (Line 1) (Column 0)) (Pos.Create (Line 1) (Column 1))
+            RangeOfPositions.Create (Path "test.txt") (Pos.Create (Line 1) (Column 0)) (Pos.Create (Line 1) (Column 1))
         )
 
     let content = rangeContent lines range
@@ -47,7 +47,7 @@ let ``RangeOfPositions of last char returns correct string`` () =
 
     let range =
         OfPositions(
-            RangeOfPositions.Create "test.txt" (Pos.Create (Line 1) (Column 3)) (Pos.Create (Line 1) (Column 4))
+            RangeOfPositions.Create (Path "test.txt") (Pos.Create (Line 1) (Column 3)) (Pos.Create (Line 1) (Column 4))
         )
 
     let content = rangeContent lines range
@@ -58,7 +58,7 @@ let ``RangeOfPosition returns whole line`` () =
     let lines = [| "0123"; "45"; "678" |]
 
     let range =
-        OfPosition(RangeOfPosition.Create "test.txt" (Pos.Create (Line 2) (Column 1)))
+        OfPosition(RangeOfPosition.Create (Path "test.txt") (Pos.Create (Line 2) (Column 1)))
 
     let content = rangeContent lines range
     Assert.Equal("45", Assert.Single(content))
@@ -69,7 +69,7 @@ let ``Multiline RangeOfPositions covering all lines returns correct strings`` ()
 
     let range =
         OfPositions(
-            RangeOfPositions.Create "test.txt" (Pos.Create (Line 1) (Column 0)) (Pos.Create (Line 2) (Column 4))
+            RangeOfPositions.Create (Path "test.txt") (Pos.Create (Line 1) (Column 0)) (Pos.Create (Line 2) (Column 4))
         )
 
     let content = rangeContent lines range
@@ -83,7 +83,7 @@ let ``Multiline RangeOfPositions covering part of lines returns correct strings`
 
     let range =
         OfPositions(
-            RangeOfPositions.Create "test.txt" (Pos.Create (Line 1) (Column 3)) (Pos.Create (Line 3) (Column 1))
+            RangeOfPositions.Create (Path "test.txt") (Pos.Create (Line 1) (Column 3)) (Pos.Create (Line 3) (Column 1))
         )
 
     let content = rangeContent lines range
@@ -96,7 +96,7 @@ let ``Multiline RangeOfPositions covering part of lines returns correct strings`
 let ``RangeOfLine with length zero returns single line from non-empty line`` () =
     let lines = [| "0123" |]
 
-    let range = OfLines(RangeOfLines.Create "test.txt" (Line 1) (Line 1))
+    let range = OfLines(RangeOfLines.Create (Path "test.txt") (Line 1) (Line 1))
 
     let content = rangeContent lines range
     Assert.Equal(lines[0], Assert.Single(content))
@@ -105,7 +105,7 @@ let ``RangeOfLine with length zero returns single line from non-empty line`` () 
 let ``Multiline RangeOfLine returns correct strings`` () =
     let lines = [| "0123"; "45"; "6789" |]
 
-    let range = OfLines(RangeOfLines.Create "test.txt" (Line 1) (Line 3))
+    let range = OfLines(RangeOfLines.Create (Path "test.txt") (Line 1) (Line 3))
 
     let content = rangeContent lines range
     Assert.Equal(3, content.Length)
