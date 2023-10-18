@@ -258,19 +258,22 @@ module SarifReport =
         let startColumn = Column loc.Region.StartColumn
         OfPosition(RangeOfPosition.Create file (Pos.Create startLine startColumn))
 
-    let readLog path =
-        let text = System.IO.File.ReadAllText(path)
+    let readLog (rawText: unit -> string) =
+        let text = rawText ()
         let sarifLog = Newtonsoft.Json.JsonConvert.DeserializeObject<SarifLog>(text)
         sarifLog
 
-    let rangesFromLog (log: SarifLog) =
+    let readLogFromDisk path =
+        let rawText = fun () -> System.IO.File.ReadAllText(path)
+        readLog rawText
+
+    let itemsFromLog (log: SarifLog) =
         [| for run in log.Runs do
                for result in run.Results do
                    for loc in result.Locations do
                        { Range = fromPhysicalLocation loc.PhysicalLocation
                          RuleId = result.RuleId
                          Message = result.Message.Text } |]
-
 
     let fileContent (path: Path, sarifItems: SarifItem array) =
         if System.IO.File.Exists path.Value then
@@ -279,8 +282,11 @@ module SarifReport =
             sarifItems
             |> Array.map (fun item ->
                 let content = rangeContent lines item.Range
-                Array.append [| $"{item.RuleId}: {item.Message}\n{item.Range.ToString()}" |] content)
-            |> Array.map (fun c -> Array.append c [| "---" |])
+
+                Array.concat
+                    [| Array.singleton $"{item.RuleId}: {item.Message}\n{item.Range.ToString()}"
+                       content
+                       Array.singleton "---" |])
             |> Array.concat
         else
             sprintf "File not found: %s" path.Value |> Array.singleton
@@ -304,8 +310,8 @@ module Main =
         else if argv.Length = 1 && argv[0].EndsWith(".sarif", StringComparison.Ordinal) then
             if File.Exists argv[0] then
                 argv[0]
-                |> SarifReport.readLog
-                |> SarifReport.rangesFromLog
+                |> SarifReport.readLogFromDisk
+                |> SarifReport.itemsFromLog
                 |> Array.groupBy (fun r -> r.Range.File)
                 |> Array.iter (SarifReport.fileContent >> IO.output)
 
