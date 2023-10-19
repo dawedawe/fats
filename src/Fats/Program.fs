@@ -302,30 +302,36 @@ module Main =
     open System.IO
     open ArgsParser
 
-    [<EntryPoint>]
-    let main argv =
-        if Array.isEmpty argv then
-            printfn "Usage: fats <path> [<path> ...]"
-            1
-        else if argv.Length = 1 && argv[0].EndsWith(".sarif", StringComparison.Ordinal) then
-            if File.Exists argv[0] then
-                argv[0]
-                |> SarifReport.readLogFromDisk
-                |> SarifReport.itemsFromLog
-                |> Array.groupBy (fun r -> r.Range.File)
-                |> Array.iter (SarifReport.fileContent >> IO.output)
-
-                0
-            else
-                printfn $"file does not exist %s{argv[0]}"
-                1
-        else
-            parse argv
-            |> fun (ranges, invalidArgs) ->
-                invalidArgs |> Array.iter (fun a -> printfn $"invalid argument: \"{a}\"")
-
-                ranges
-                |> Array.groupBy (fun r -> r.File)
-                |> Array.iter (Core.fileContent >> IO.output)
+    let handleSarifArg path =
+        if File.Exists path then
+            path
+            |> SarifReport.readLogFromDisk
+            |> SarifReport.itemsFromLog
+            |> Array.groupBy (fun r -> r.Range.File)
+            |> Array.iter (SarifReport.fileContent >> IO.output)
 
             0
+        else
+            printfn $"file does not exist %s{path}"
+            1
+
+    let handlePathArgs argv =
+        parse argv
+        |> fun (ranges, invalidArgs) ->
+            invalidArgs |> Array.iter (fun a -> printfn $"invalid argument: \"{a}\"")
+
+            ranges
+            |> Array.groupBy (fun r -> r.File)
+            |> Array.iter (Core.fileContent >> IO.output)
+
+        0
+
+    [<EntryPoint>]
+    let main argv =
+
+        match argv with
+        | [||] ->
+            printfn "Usage: fats <path> [<path> ...]"
+            1
+        | [| path |] when path.EndsWith(".sarif", StringComparison.Ordinal) -> handleSarifArg argv[0]
+        | _ -> handlePathArgs argv
