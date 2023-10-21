@@ -40,7 +40,7 @@ let validArgsAndExpectedRanges =
 [<Theory>]
 [<MemberData(nameof (validArgsAndExpectedRanges))>]
 let ``Valid args produce valid ranges`` (arg: string, expectedRange: Range) =
-    let ranges, invalidArgs = parse [| arg |]
+    let ranges, invalidArgs = parse [ arg ]
     Assert.Empty(invalidArgs)
     Assert.Equal(expectedRange, Assert.Single(ranges))
 
@@ -50,6 +50,6 @@ let invalidArgs =
 [<Theory>]
 [<MemberData(nameof (invalidArgs))>]
 let ``Invalid args produce invalid ranges`` (arg: string) =
-    let ranges, invalidArgs = parse [| arg |]
+    let ranges, invalidArgs = parse [ arg ]
     Assert.Empty(ranges)
     Assert.Single(invalidArgs)

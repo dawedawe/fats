@@ -175,7 +175,7 @@ module ArgsParser =
         else
             None
 
-    let parse (args: string array) =
+    let parse (args: string list) =
         let f (rangesAcc, invalidAcc) arg =
             match arg with
             | IsOfPositions r
@@ -183,7 +183,7 @@ module ArgsParser =
             | IsOfLines r -> Array.append rangesAcc [| r |], invalidAcc
             | _ -> rangesAcc, Array.append invalidAcc [| arg |]
 
-        Array.fold f (Array.empty, Array.empty) args
+        List.fold f (Array.empty, Array.empty) args
 
 module Core =
 
@@ -378,7 +378,20 @@ module Main =
 
     open System
     open System.IO
+    open Argu
     open ArgsParser
+
+    type CliArguments =
+        | [<Unique>] NoMarkup
+        | [<MainCommand>] Paths of paths: string list
+
+        interface IArgParserTemplate with
+            member s.Usage =
+                match s with
+                | NoMarkup _ -> "don't use console markup like bold or underline"
+                | Paths _ -> "the ranges to dump"
+
+    let parser = ArgumentParser.Create<CliArguments>()
 
     let handleSarifArg nomarkup path =
         if File.Exists path then
@@ -393,8 +406,8 @@ module Main =
             printfn $"file does not exist %s{path}"
             1
 
-    let handlePathArgs nomarkup argv =
-        parse argv
+    let handlePathArgs nomarkup paths =
+        parse paths
         |> fun (ranges, invalidArgs) ->
             invalidArgs |> Array.iter (fun a -> printfn $"invalid argument: \"{a}\"")
 
@@ -404,17 +417,22 @@ module Main =
 
         0
 
+    let usage exitCode =
+        printfn $"{parser.PrintUsage()}"
+        exitCode
+
     [<EntryPoint>]
     let main argv =
 
-        // Todo Real argv handling
-        match argv with
-        | [||] ->
-            printfn "Usage: fats <path> [<path> ...]"
-            1
-        | [| "--nomarkup"; path |] when path.EndsWith(".sarif", StringComparison.Ordinal) -> handleSarifArg false path
-        | [| path |] when path.EndsWith(".sarif", StringComparison.Ordinal) -> handleSarifArg true argv[0]
-        | _ ->
-            let nomarkup = argv[0] = "--nomarkup"
-            let paths = if nomarkup then argv[1..] else argv
-            handlePathArgs nomarkup paths
+        let results = parser.Parse(inputs = argv, raiseOnUsage = false)
+
+        if results.IsUsageRequested then
+            usage 0
+        else
+            let nomarkup = results.Contains <@ NoMarkup @>
+            let paths = results.TryGetResult <@ Paths @> |> Option.defaultValue []
+
+            match paths with
+            | [] -> usage 1
+            | [ path ] when path.EndsWith(".sarif", StringComparison.Ordinal) -> handleSarifArg nomarkup path
+            | paths -> handlePathArgs nomarkup paths
