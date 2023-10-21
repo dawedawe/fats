@@ -114,7 +114,8 @@ module Model =
             | OfLines r -> r.ToString()
 
     type Content =
-        { Pre: string
+        { Source: Range
+          Pre: string
           Mid: string
           Post: string }
 
@@ -207,7 +208,11 @@ module Core =
 
                 let post = linesInRange[0].Substring(range.End.Column.Value)
 
-                let content = { Pre = pre; Mid = mid; Post = post }
+                let content =
+                    { Source = OfPositions range
+                      Pre = pre
+                      Mid = mid
+                      Post = post }
 
                 Ok content
 
@@ -228,7 +233,11 @@ module Core =
 
                 let post = linesInRange[linesUpperBound].Substring(range.End.Column.Value)
 
-                let content = { Pre = pre; Mid = mid; Post = post }
+                let content =
+                    { Source = OfPositions range
+                      Pre = pre
+                      Mid = mid
+                      Post = post }
 
                 Ok content
         else
@@ -249,7 +258,11 @@ module Core =
                 let mid = lineInRange.Substring(range.Position.Column.Value, 1)
                 let post = lineInRange.Substring(range.Position.Column.Value + 1)
 
-                let content = { Pre = pre; Mid = mid; Post = post }
+                let content =
+                    { Source = OfPosition range
+                      Pre = pre
+                      Mid = mid
+                      Post = post }
 
                 Ok content
         else
@@ -261,7 +274,11 @@ module Core =
                 lines[range.Start.Value0 .. range.End.Value0]
                 |> String.concat System.Environment.NewLine
 
-            let content = { Pre = ""; Mid = mid; Post = "" }
+            let content =
+                { Source = OfLines range
+                  Pre = ""
+                  Mid = mid
+                  Post = "" }
 
             Ok content
         else
@@ -286,8 +303,12 @@ module IO =
     open Spectre.Console
     open Model
 
-    // Todo no markup for RangeOfLines
     let printer nomarkup content =
+        let nomarkup =
+            match content.Source with
+            | OfLines _ -> true // because marking up all content makes no sense
+            | _ -> nomarkup
+
         if nomarkup then
             printfn $"%s{content.Pre}%s{content.Mid}%s{content.Post}"
         else
