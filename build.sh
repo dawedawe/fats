@@ -1,6 +1,6 @@
 #!/bin/sh
 
-rm -rf ./src/Fats/bin ./src/Fats/obj ./src/Fats.Tests/bin ./src/Fats.Tests/obj ./nupkg
+rm -rf ./src/Fats/bin/Release ./src/Fats/obj/Release ./src/Fats.Tests/bin/Release ./src/Fats.Tests/obj/Release ./nupkg
 dotnet tool restore
 dotnet fantomas .
 dotnet build -c Release
