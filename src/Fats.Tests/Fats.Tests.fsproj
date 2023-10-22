@@ -11,6 +11,7 @@
     <Compile Include="ArgsParserTests.fs" />
     <Compile Include="CoreTests.fs" />
     <Compile Include="SarifReportTests.fs" />
+    <Compile Include="End2EndTests.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
   <ItemGroup>

@@ -21,7 +21,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="./../../README.md" Pack="true" PackagePath=""/>
+    <None Include="./../../README.md" Pack="true" PackagePath="" />
   </ItemGroup>
 
   <ItemGroup>
@@ -29,8 +29,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Argu" Version="6.1.1" />
     <PackageReference Include="Ionide.KeepAChangelog.Tasks" Version="0.1.8" />
     <PackageReference Include="Sarif.Sdk" Version="4.3.4" />
+    <PackageReference Include="Spectre.Console" Version="0.47.0" />
   </ItemGroup>
 
 </Project>

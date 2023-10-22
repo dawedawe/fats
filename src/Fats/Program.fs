@@ -113,6 +113,12 @@ module Model =
             | OfPosition r -> r.ToString()
             | OfLines r -> r.ToString()
 
+    type Content =
+        { Source: Range
+          Pre: string
+          Mid: string
+          Post: string }
+
 module ArgsParser =
 
     open System.Text.RegularExpressions
@@ -170,7 +176,7 @@ module ArgsParser =
         else
             None
 
-    let parse (args: string array) =
+    let parse (args: string list) =
         let f (rangesAcc, invalidAcc) arg =
             match arg with
             | IsOfPositions r
@@ -178,7 +184,7 @@ module ArgsParser =
             | IsOfLines r -> Array.append rangesAcc [| r |], invalidAcc
             | _ -> rangesAcc, Array.append invalidAcc [| arg |]
 
-        Array.fold f (Array.empty, Array.empty) args
+        List.fold f (Array.empty, Array.empty) args
 
 module Core =
 
@@ -192,20 +198,50 @@ module Core =
                 range.Start.Column.Value > (Array.head linesInRange).Length
                 || range.End.Column.Value > (Array.last linesInRange).Length
             then
-                $"Invalid range {range.ToString()}" |> Array.singleton
+                Error $"Invalid range {range.ToString()}"
             else if range.Start.Line = range.End.Line then
-                [| linesInRange[0]
-                       .Substring(range.Start.Column.Value, range.End.Column.Value - range.Start.Column.Value) |]
+                let pre = linesInRange[0].Substring(0, range.Start.Column.Value)
+
+                let mid =
+                    linesInRange[0]
+                        .Substring(range.Start.Column.Value, range.End.Column.Value - range.Start.Column.Value)
+
+                let post = linesInRange[0].Substring(range.End.Column.Value)
+
+                let content =
+                    { Source = OfPositions range
+                      Pre = pre
+                      Mid = mid
+                      Post = post }
+
+                Ok content
 
             else
-                linesInRange[0] <- linesInRange[0].Substring(range.Start.Column.Value)
+                let linesUpperBound = linesInRange.Length - 1
+                let pre = linesInRange[0].Substring(0, range.Start.Column.Value)
 
-                linesInRange[linesInRange.Length - 1] <-
-                    linesInRange[linesInRange.Length - 1].Substring(0, range.End.Column.Value)
+                let mid =
+                    seq {
+                        yield linesInRange[0].Substring(range.Start.Column.Value)
 
-                linesInRange
+                        for i in range.Start.Line.Value0 + 1 .. range.End.Line.Value0 - 1 do
+                            yield linesInRange[i]
+
+                        yield linesInRange[linesUpperBound].Substring(0, range.End.Column.Value)
+                    }
+                    |> String.concat System.Environment.NewLine
+
+                let post = linesInRange[linesUpperBound].Substring(range.End.Column.Value)
+
+                let content =
+                    { Source = OfPositions range
+                      Pre = pre
+                      Mid = mid
+                      Post = post }
+
+                Ok content
         else
-            $"Invalid range {range.ToString()}" |> Array.singleton
+            Error $"Invalid range {range.ToString()}"
 
     /// <summary>give back the whole line of the position</summary>
     /// <param name="range"></param>
@@ -216,17 +252,37 @@ module Core =
             let lineInRange = lines[range.Position.Line.Value0]
 
             if range.Position.Column.Value > lineInRange.Length then
-                $"Invalid range {range.ToString()}" |> Array.singleton
+                Error $"Invalid range {range.ToString()}"
             else
-                lineInRange |> Array.singleton
+                let pre = lineInRange.Substring(0, range.Position.Column.Value)
+                let mid = lineInRange.Substring(range.Position.Column.Value, 1)
+                let post = lineInRange.Substring(range.Position.Column.Value + 1)
+
+                let content =
+                    { Source = OfPosition range
+                      Pre = pre
+                      Mid = mid
+                      Post = post }
+
+                Ok content
         else
-            $"Invalid range {range.ToString()}" |> Array.singleton
+            Error $"Invalid range {range.ToString()}"
 
     let rangeOfLinesContent (range: RangeOfLines) (lines: string array) =
         if range.End.Value <= lines.Length && range.IsValid then
-            lines[range.Start.Value0 .. range.End.Value0]
+            let mid =
+                lines[range.Start.Value0 .. range.End.Value0]
+                |> String.concat System.Environment.NewLine
+
+            let content =
+                { Source = OfLines range
+                  Pre = ""
+                  Mid = mid
+                  Post = "" }
+
+            Ok content
         else
-            $"Invalid range {range.ToString()}" |> Array.singleton
+            Error $"Invalid range {range.ToString()}"
 
     let rangeContent (lines: string array) (range: Range) =
         match range with
@@ -237,20 +293,58 @@ module Core =
     let fileContent (path: Path, ranges: Range array) =
         if System.IO.File.Exists path.Value then
             let lines = System.IO.File.ReadAllLines(path.Value)
-            ranges |> Array.map (rangeContent lines) |> Array.concat
+            ranges |> Array.map (rangeContent lines)
         else
-            sprintf "File not found: %s" path.Value |> Array.singleton
+            $"File not found: %s{path.Value}" |> Error |> Array.singleton
+
+module IO =
+
+    open System
+    open Spectre.Console
+    open Model
+
+    let printer nomarkup content =
+        let nomarkup =
+            match content.Source with
+            | OfLines _ -> true // because marking up all content makes no sense
+            | _ -> nomarkup
+
+        if nomarkup then
+            printfn $"%s{content.Pre}%s{content.Mid}%s{content.Post}"
+        else
+            AnsiConsole.Markup(
+                "{0}[underline bold]{1}[/]{2}{3}",
+                Markup.Escape(content.Pre),
+                Markup.Escape(content.Mid),
+                Markup.Escape(content.Post),
+                Environment.NewLine
+            )
+
+    let output nomarkup (results: Result<Content, string> array) =
+
+        results
+        |> Array.iter (fun r ->
+            match r with
+            | Ok content -> printer nomarkup content
+            | Error e -> printfn $"%s{e}"
+
+        )
 
 module SarifReport =
 
     open Microsoft.CodeAnalysis.Sarif
     open Core
     open Model
+    open IO
 
     type SarifItem =
         { RuleId: string
           Message: string
           Range: Range }
+
+    type SarifItemContent =
+        { Item: SarifItem
+          Content: Result<Content, string> }
 
     let fromPhysicalLocation (loc: PhysicalLocation) =
         let file = Path loc.ArtifactLocation.Uri.AbsolutePath
@@ -282,56 +376,84 @@ module SarifReport =
             sarifItems
             |> Array.map (fun item ->
                 let content = rangeContent lines item.Range
-
-                Array.concat
-                    [| Array.singleton $"{item.RuleId}: {item.Message}\n{item.Range.ToString()}"
-                       content
-                       Array.singleton "---" |])
-            |> Array.concat
+                { Item = item; Content = content })
+            |> Ok
         else
-            sprintf "File not found: %s" path.Value |> Array.singleton
+            $"File not found: %s{path.Value}" |> Error
 
-module IO =
+    let output nomarkup (results: Result<SarifItemContent array, string>) =
+        match results with
+        | Ok results ->
+            results
+            |> Array.iter (fun itemContent ->
+                printfn $"{itemContent.Item.RuleId}: {itemContent.Item.Message}\n{itemContent.Item.Range.ToString()}"
 
-    let output lines =
-        lines |> Array.iter (fun s -> printfn "%s" s)
+                match itemContent.Content with
+                | Ok rangeContent -> printer nomarkup rangeContent
+                | Error e -> printfn $"%s{e}"
+
+                printfn "---")
+        | Error e -> printfn $"%s{e}"
 
 module Main =
 
     open System
     open System.IO
+    open Argu
     open ArgsParser
 
-    let handleSarifArg path =
+    type CliArguments =
+        | [<Unique>] NoMarkup
+        | [<MainCommand>] Paths of paths: string list
+
+        interface IArgParserTemplate with
+            member s.Usage =
+                match s with
+                | NoMarkup _ -> "don't use console markup like bold or underline"
+                | Paths _ -> "the ranges to dump"
+
+    let parser = ArgumentParser.Create<CliArguments>()
+
+    let handleSarifArg nomarkup path =
         if File.Exists path then
             path
             |> SarifReport.readLogFromDisk
             |> SarifReport.itemsFromLog
             |> Array.groupBy (fun r -> r.Range.File)
-            |> Array.iter (SarifReport.fileContent >> IO.output)
+            |> Array.iter (SarifReport.fileContent >> (SarifReport.output nomarkup))
 
             0
         else
             printfn $"file does not exist %s{path}"
             1
 
-    let handlePathArgs argv =
-        parse argv
+    let handlePathArgs nomarkup paths =
+        parse paths
         |> fun (ranges, invalidArgs) ->
             invalidArgs |> Array.iter (fun a -> printfn $"invalid argument: \"{a}\"")
 
             ranges
             |> Array.groupBy (fun r -> r.File)
-            |> Array.iter (Core.fileContent >> IO.output)
+            |> Array.iter (Core.fileContent >> IO.output nomarkup)
 
         0
+
+    let usage exitCode =
+        printfn $"{parser.PrintUsage()}"
+        exitCode
 
     [<EntryPoint>]
     let main argv =
 
-        match argv with
-        | [||] ->
-            printfn "Usage: fats <path> [<path> ...]"
-            1
-        | [| path |] when path.EndsWith(".sarif", StringComparison.Ordinal) -> handleSarifArg argv[0]
-        | _ -> handlePathArgs argv
+        let results = parser.Parse(inputs = argv, raiseOnUsage = false)
+
+        if results.IsUsageRequested then
+            usage 0
+        else
+            let nomarkup = results.Contains <@ NoMarkup @>
+            let paths = results.TryGetResult <@ Paths @> |> Option.defaultValue []
+
+            match paths with
+            | [] -> usage 1
+            | [ path ] when path.EndsWith(".sarif", StringComparison.Ordinal) -> handleSarifArg nomarkup path
+            | paths -> handlePathArgs nomarkup paths

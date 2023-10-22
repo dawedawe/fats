@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+* Support for markedup output
+
 ## [0.0.4] - 2023-10-18
 
 ### Added

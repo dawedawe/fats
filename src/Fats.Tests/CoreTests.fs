@@ -1,5 +1,6 @@
 module Fats.CoreTests
 
+open System
 open Xunit
 open Fats.Core
 open Fats.Model
@@ -13,8 +14,12 @@ let ``RangeOfPositions with length zero returns empty string from non-empty line
             RangeOfPositions.Create (Path "test.txt") (Pos.Create (Line 1) (Column 0)) (Pos.Create (Line 1) (Column 0))
         )
 
-    let content = rangeContent lines range
-    Assert.Equal("", Assert.Single(content))
+    match rangeContent lines range with
+    | Ok content ->
+        Assert.Equal("", content.Pre)
+        Assert.Equal("", content.Mid)
+        Assert.Equal(lines[0], content.Post)
+    | Error _ -> Assert.Fail("Error returned")
 
 [<Fact>]
 let ``RangeOfPositions with length zero returns empty string from empty line`` () =
@@ -25,8 +30,12 @@ let ``RangeOfPositions with length zero returns empty string from empty line`` (
             RangeOfPositions.Create (Path "test.txt") (Pos.Create (Line 1) (Column 0)) (Pos.Create (Line 1) (Column 0))
         )
 
-    let content = rangeContent lines range
-    Assert.Equal("", Assert.Single(content))
+    match rangeContent lines range with
+    | Ok content ->
+        Assert.Equal("", content.Pre)
+        Assert.Equal("", content.Mid)
+        Assert.Equal("", content.Post)
+    | Error _ -> Assert.Fail("Error returned")
 
 
 [<Fact>]
@@ -38,8 +47,12 @@ let ``RangeOfPositions of first char returns correct string`` () =
             RangeOfPositions.Create (Path "test.txt") (Pos.Create (Line 1) (Column 0)) (Pos.Create (Line 1) (Column 1))
         )
 
-    let content = rangeContent lines range
-    Assert.Equal("0", Assert.Single(content))
+    match rangeContent lines range with
+    | Ok content ->
+        Assert.Equal("", content.Pre)
+        Assert.Equal("0", content.Mid)
+        Assert.Equal("123", content.Post)
+    | Error _ -> Assert.Fail("Error returned")
 
 [<Fact>]
 let ``RangeOfPositions of last char returns correct string`` () =
@@ -50,18 +63,26 @@ let ``RangeOfPositions of last char returns correct string`` () =
             RangeOfPositions.Create (Path "test.txt") (Pos.Create (Line 1) (Column 3)) (Pos.Create (Line 1) (Column 4))
         )
 
-    let content = rangeContent lines range
-    Assert.Equal("3", Assert.Single(content))
+    match rangeContent lines range with
+    | Ok content ->
+        Assert.Equal("012", content.Pre)
+        Assert.Equal("3", content.Mid)
+        Assert.Equal("", content.Post)
+    | Error _ -> Assert.Fail("Error returned")
 
 [<Fact>]
-let ``RangeOfPosition returns whole line`` () =
+let ``RangeOfPosition returns correct char`` () =
     let lines = [| "0123"; "45"; "678" |]
 
     let range =
         OfPosition(RangeOfPosition.Create (Path "test.txt") (Pos.Create (Line 2) (Column 1)))
 
-    let content = rangeContent lines range
-    Assert.Equal("45", Assert.Single(content))
+    match rangeContent lines range with
+    | Ok content ->
+        Assert.Equal("4", content.Pre)
+        Assert.Equal("5", content.Mid)
+        Assert.Equal("", content.Post)
+    | Error _ -> Assert.Fail("Error returned")
 
 [<Fact>]
 let ``Multiline RangeOfPositions covering all lines returns correct strings`` () =
@@ -72,10 +93,12 @@ let ``Multiline RangeOfPositions covering all lines returns correct strings`` ()
             RangeOfPositions.Create (Path "test.txt") (Pos.Create (Line 1) (Column 0)) (Pos.Create (Line 2) (Column 4))
         )
 
-    let content = rangeContent lines range
-    Assert.Equal(2, content.Length)
-    Assert.Equal(lines[0], content[0])
-    Assert.Equal(lines[1], content[1])
+    match rangeContent lines range with
+    | Ok content ->
+        Assert.Equal("", content.Pre)
+        Assert.Equal(lines |> String.concat Environment.NewLine, content.Mid)
+        Assert.Equal("", content.Post)
+    | Error _ -> Assert.Fail("Error returned")
 
 [<Fact>]
 let ``Multiline RangeOfPositions covering part of lines returns correct strings`` () =
@@ -86,11 +109,13 @@ let ``Multiline RangeOfPositions covering part of lines returns correct strings`
             RangeOfPositions.Create (Path "test.txt") (Pos.Create (Line 1) (Column 3)) (Pos.Create (Line 3) (Column 1))
         )
 
-    let content = rangeContent lines range
-    Assert.Equal(3, content.Length)
-    Assert.Equal("3", content[0])
-    Assert.Equal(lines[1], content[1])
-    Assert.Equal("8", content[2])
+    match rangeContent lines range with
+    | Ok content ->
+        Assert.Equal("012", content.Pre)
+        let expected = "3" + Environment.NewLine + lines[1] + Environment.NewLine + "8"
+        Assert.Equal(expected, content.Mid)
+        Assert.Equal("90", content.Post)
+    | Error _ -> Assert.Fail("Error returned")
 
 [<Fact>]
 let ``RangeOfLine with length zero returns single line from non-empty line`` () =
@@ -98,8 +123,12 @@ let ``RangeOfLine with length zero returns single line from non-empty line`` () 
 
     let range = OfLines(RangeOfLines.Create (Path "test.txt") (Line 1) (Line 1))
 
-    let content = rangeContent lines range
-    Assert.Equal(lines[0], Assert.Single(content))
+    match rangeContent lines range with
+    | Ok content ->
+        Assert.Equal("", content.Pre)
+        Assert.Equal(lines[0], content.Mid)
+        Assert.Equal("", content.Post)
+    | Error _ -> Assert.True(false)
 
 [<Fact>]
 let ``Multiline RangeOfLine returns correct strings`` () =
@@ -107,8 +136,10 @@ let ``Multiline RangeOfLine returns correct strings`` () =
 
     let range = OfLines(RangeOfLines.Create (Path "test.txt") (Line 1) (Line 3))
 
-    let content = rangeContent lines range
-    Assert.Equal(3, content.Length)
-    Assert.Equal(lines[0], content[0])
-    Assert.Equal(lines[1], content[1])
-    Assert.Equal(lines[2], content[2])
+    match rangeContent lines range with
+    | Ok content ->
+        Assert.Equal("", content.Pre)
+        let expected = lines |> String.concat Environment.NewLine
+        Assert.Equal(expected, content.Mid)
+        Assert.Equal("", content.Post)
+    | Error _ -> Assert.True(false)
