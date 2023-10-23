@@ -27,6 +27,7 @@
     <Compile Include="Core.fs" />
     <Compile Include="IO.fs" />
     <Compile Include="SarifReport.fs" />
+    <Compile Include="AnalyzersDemo.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
   <ItemGroup>
