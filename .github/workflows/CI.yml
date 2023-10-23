@@ -32,3 +32,25 @@ jobs:
       run: dotnet build --no-restore
     - name: Test
       run: dotnet test --no-build --verbosity normal
+
+  analyze-code:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 7.0.x
+    - name: Restore tools
+      run: dotnet tool restore
+    - name: Restore dependencies
+      run: dotnet restore
+    - name: Prepare analyzers
+      run: dotnet restore ./analyzers/analyzers.fsproj
+    - name: Run analyzers
+      run: dotnet fsharp-analyzers --project ./src/Fats/Fats.fsproj --analyzers-path ./.analyzerpackages/g-research.fsharp.analyzers/0.1.5/ --verbose --report ./analysis.sarif
+    - name: Upload SARIF file
+      uses: github/codeql-action/upload-sarif@v2
+      with:
+        sarif_file: analysis.sarif
