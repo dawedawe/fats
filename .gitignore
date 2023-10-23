@@ -124,3 +124,5 @@ TestResults.xml
 nupkg/
 
 *.sarif
+.analyzerpackages
+analysis.sarif
