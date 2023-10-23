@@ -1,7 +1,7 @@
 module Fats.AnalyzersDemo
 
-    let f x y = x + y
+let f x y = x + y
 
-    let g x = f x
+let g x = f x
 
-    let h (s: string) = s.StartsWith("foo")
+let h (s: string) = s.StartsWith("foo")
