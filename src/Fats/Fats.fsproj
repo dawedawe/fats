@@ -42,7 +42,7 @@
   </ItemGroup>
 
   <Target Name="Analyze" BeforeTargets="Build">
-    <Exec Command= "dotnet fsharp-analyzers --project $(MSBuildProjectFile) --analyzers-path $(PkgG-Research_FSharp_Analyzers) --verbose" />
+    <Exec Command= "dotnet fsharp-analyzers --project $(MSBuildProjectFile) --analyzers-path $(PkgG-Research_FSharp_Analyzers) --verbose --report $(SolutionDir)/analysis.sarif" />
   </Target>
 
 </Project>
