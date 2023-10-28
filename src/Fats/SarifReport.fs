@@ -51,7 +51,7 @@ module SarifReport =
         else
             $"File not found: %s{path.Value}" |> Error
 
-    let output nomarkup (results: Result<SarifItemContent array, string>) =
+    let output dumpConf (results: Result<SarifItemContent array, string>) =
         match results with
         | Ok results ->
             results
@@ -59,7 +59,7 @@ module SarifReport =
                 printfn $"{itemContent.Item.RuleId}: {itemContent.Item.Message}\n{itemContent.Item.Range.ToString()}"
 
                 match itemContent.Content with
-                | Ok rangeContent -> printer nomarkup rangeContent
+                | Ok rangeContent -> printer dumpConf rangeContent
                 | Error e -> printfn $"%s{e}"
 
                 printfn "---")

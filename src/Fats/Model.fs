@@ -118,3 +118,8 @@ module Model =
           Pre: string
           Mid: string
           Post: string }
+
+    type DumpConfig =
+        { NoMarkup: bool
+          NoPrefix: bool
+          NoPostfix: bool }

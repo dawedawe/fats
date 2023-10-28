@@ -6,20 +6,23 @@ module IO =
     open Spectre.Console
     open Model
 
-    let printer nomarkup content =
+    let printer dumpConf content =
         let nomarkup =
             match content.Source with
             | OfLines _ -> true // because marking up all content makes no sense
-            | _ -> nomarkup
+            | _ -> dumpConf.NoMarkup
+
+        let prefix = if dumpConf.NoPrefix then String.Empty else content.Pre
+        let postfix = if dumpConf.NoPostfix then String.Empty else content.Post
 
         if nomarkup then
-            printfn $"%s{content.Pre}%s{content.Mid}%s{content.Post}"
+            printfn $"%s{prefix}%s{content.Mid}%s{postfix}"
         else
             AnsiConsole.Markup(
                 "{0}[underline bold]{1}[/]{2}{3}",
-                Markup.Escape(content.Pre),
+                Markup.Escape(prefix),
                 Markup.Escape(content.Mid),
-                Markup.Escape(content.Post),
+                Markup.Escape(postfix),
                 Environment.NewLine
             )
 
