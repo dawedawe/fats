@@ -4,7 +4,7 @@
 
 ### Added
 
-* CLI options to controle wheter to dump the prefix/postfix of a range
+* CLI options to control whether to dump the prefix/postfix of a range
 
 ## [0.0.5] - 2023-10-22
 
