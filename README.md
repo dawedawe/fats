@@ -21,6 +21,8 @@ PATHS:
 OPTIONS:
 
     --nomarkup            don't use console markup like bold or underline
+    --noprefix            don't dump line content before the range
+    --nopostfix           don't dump line content after the range
     --help                display this list of options.
 ```
 
