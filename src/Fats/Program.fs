@@ -56,7 +56,7 @@ module Main =
             usage 0
         else
             let nomarkup = results.Contains <@ NoMarkup @>
-            let paths = results.TryGetResult <@ Paths @> |> Option.defaultValue []
+            let paths = results.GetResult(<@ Paths @>, [])
 
             match paths with
             | [] -> usage 1
