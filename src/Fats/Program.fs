@@ -6,15 +6,20 @@ module Main =
     open System.IO
     open Argu
     open ArgsParser
+    open Model
 
     type CliArguments =
         | [<Unique>] NoMarkup
+        | [<Unique>] NoPrefix
+        | [<Unique>] NoPostfix
         | [<MainCommand>] Paths of paths: string list
 
         interface IArgParserTemplate with
             member s.Usage =
                 match s with
                 | NoMarkup _ -> "don't use console markup like bold or underline"
+                | NoPrefix _ -> "don't dump line content before the range"
+                | NoPostfix _ -> "don't dump line content after the range"
                 | Paths _ -> "the ranges to dump"
 
     let parser = ArgumentParser.Create<CliArguments>()
@@ -32,14 +37,14 @@ module Main =
             printfn $"file does not exist %s{path}"
             1
 
-    let handlePathArgs nomarkup paths =
+    let handlePathArgs dumpConf paths =
         parse paths
         |> fun (ranges, invalidArgs) ->
             invalidArgs |> Array.iter (fun a -> printfn $"invalid argument: \"{a}\"")
 
             ranges
             |> Array.groupBy (fun r -> r.File)
-            |> Array.iter (Core.fileContent >> IO.output nomarkup)
+            |> Array.iter (Core.fileContent >> IO.output dumpConf)
 
         0
 
@@ -55,10 +60,14 @@ module Main =
         if results.IsUsageRequested then
             usage 0
         else
-            let nomarkup = results.Contains <@ NoMarkup @>
+            let dumpConf =
+                { NoMarkup = results.Contains <@ NoMarkup @>
+                  NoPrefix = results.Contains <@ NoPrefix @>
+                  NoPostfix = results.Contains <@ NoPostfix @> }
+
             let paths = results.GetResult(<@ Paths @>, [])
 
             match paths with
             | [] -> usage 1
-            | [ path ] when path.EndsWith(".sarif", StringComparison.Ordinal) -> handleSarifArg nomarkup path
-            | paths -> handlePathArgs nomarkup paths
+            | [ path ] when path.EndsWith(".sarif", StringComparison.Ordinal) -> handleSarifArg dumpConf path
+            | paths -> handlePathArgs dumpConf paths
