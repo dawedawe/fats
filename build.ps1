@@ -6,5 +6,5 @@ rm -Recurse -Force -ErrorAction Ignore ./nupkg
 dotnet tool restore
 dotnet fantomas .
 dotnet build -c Release
-dotnet test -c Release
-dotnet pack -c Release
+dotnet test -c Release --no-build
+dotnet pack -c Release --no-build
