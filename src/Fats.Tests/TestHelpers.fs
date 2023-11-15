@@ -40,7 +40,7 @@ let runFats args =
 #endif
 
     let assemblyPath =
-        Path.Combine("..", "..", "..", "..", "Fats", "bin", configuration, "net7.0", "fats.dll")
+        Path.Combine("..", "..", "..", "..", "Fats", "bin", configuration, "net8.0", "fats.dll")
 
     let info = ProcessStartInfo("dotnet", $"{assemblyPath} {args}")
     info.CreateNoWindow <- true

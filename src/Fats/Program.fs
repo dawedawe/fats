@@ -17,9 +17,9 @@ module Main =
         interface IArgParserTemplate with
             member s.Usage =
                 match s with
-                | NoMarkup _ -> "don't use console markup like bold or underline"
-                | NoPrefix _ -> "don't dump line content before the range"
-                | NoPostfix _ -> "don't dump line content after the range"
+                | NoMarkup -> "don't use console markup like bold or underline"
+                | NoPrefix -> "don't dump line content before the range"
+                | NoPostfix -> "don't dump line content after the range"
                 | Paths _ -> "the ranges to dump"
 
     let parser = ArgumentParser.Create<CliArguments>()

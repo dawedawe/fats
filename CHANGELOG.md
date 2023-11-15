@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+* Target .NET v8
+
 ## [0.0.6] - 2023-10-28
 
 ### Added
