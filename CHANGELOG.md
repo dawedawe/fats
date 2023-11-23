@@ -1,6 +1,10 @@
 # Changelog
 
-## [Unreleased]
+## [0.0.7] - 2023-11-23
+
+### Added
+
+* Support processing a directory of sarif files
 
 ### Changed
 
