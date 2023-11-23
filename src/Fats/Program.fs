@@ -24,13 +24,13 @@ module Main =
 
     let parser = ArgumentParser.Create<CliArguments>()
 
-    let handleSarifArg nomarkup path =
+    let handleSarifArg dumpConf path =
         if File.Exists path then
             path
             |> SarifReport.readLogFromDisk
             |> SarifReport.itemsFromLog
             |> Array.groupBy (fun r -> r.Range.File)
-            |> Array.iter (SarifReport.fileContent >> (SarifReport.output nomarkup))
+            |> Array.iter (SarifReport.fileContent >> (SarifReport.output dumpConf))
 
             0
         else
@@ -47,6 +47,11 @@ module Main =
             |> Array.iter (Core.fileContent >> IO.output dumpConf)
 
         0
+
+    let handleSarifDirArg dumpConf path =
+        Directory.EnumerateFiles(path, "*.sarif", SearchOption.AllDirectories)
+        |> Seq.map (handleSarifArg dumpConf)
+        |> Seq.max
 
     let usage exitCode =
         printfn $"{parser.PrintUsage()}"
@@ -70,4 +75,5 @@ module Main =
             match paths with
             | [] -> usage 1
             | [ path ] when path.EndsWith(".sarif", StringComparison.Ordinal) -> handleSarifArg dumpConf path
+            | [ path ] when Directory.Exists path -> handleSarifDirArg dumpConf path
             | paths -> handlePathArgs dumpConf paths
