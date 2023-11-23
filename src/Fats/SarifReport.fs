@@ -17,7 +17,12 @@ module SarifReport =
           Content: Result<Content, string> }
 
     let fromPhysicalLocation (loc: PhysicalLocation) =
-        let file = Path loc.ArtifactLocation.Uri.AbsolutePath
+        let file =
+            if loc.ArtifactLocation.Uri.IsAbsoluteUri then
+                Path loc.ArtifactLocation.Uri.AbsolutePath
+            else
+                Path loc.ArtifactLocation.Uri.OriginalString
+
         let startLine = Line loc.Region.StartLine
         let startColumn = Column loc.Region.StartColumn
         OfPosition(RangeOfPosition.Create file (Pos.Create startLine startColumn))

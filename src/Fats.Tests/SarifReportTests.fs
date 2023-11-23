@@ -22,7 +22,7 @@ let rawText () =
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "file:///C:/Users/schae/src/testbed/Library.fs"
+                  "uri": "src/testbed/Library.fs"
                 },
                 "region": {
                   "startLine": 6,
@@ -69,9 +69,7 @@ let rawText () =
 [<Fact>]
 let ``parsing sarif returns correct ranges`` () =
     let expected0 =
-        OfPosition(
-            RangeOfPosition.Create (Path @"C:/Users/schae/src/testbed/Library.fs") (Pos.Create (Line 6) (Column 11))
-        )
+        OfPosition(RangeOfPosition.Create (Path @"src/testbed/Library.fs") (Pos.Create (Line 6) (Column 11)))
 
     let ranges = readLog rawText |> itemsFromLog
 
